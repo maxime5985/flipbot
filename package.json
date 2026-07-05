@@ -2,10 +2,10 @@
   "name": "flipbot",
   "version": "1.0.0",
   "description": "Bot de détection de bonnes affaires sur Vinted",
-  "main": "dist/scheduler.js",
+  "main": "dist/src/scheduler.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/scheduler.js",
+    "start": "node dist/src/scheduler.js",
     "dev": "ts-node src/scheduler.ts",
     "test": "jest --coverage",
     "test:watch": "jest --watch"
@@ -32,8 +32,12 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "testMatch": ["**/tests/**/*.test.ts"],
-    "collectCoverageFrom": ["src/**/*.ts"],
+    "testMatch": [
+      "**/tests/**/*.test.ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
     "coverageThreshold": {
       "global": {
         "lines": 80
