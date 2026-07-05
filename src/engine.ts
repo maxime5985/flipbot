@@ -39,6 +39,7 @@ export class FlipBotEngine {
   async run(): Promise<void> {
     console.log(`[Engine] Starting scan — threshold: ${this.threshold * 100}%`);
 
+    await this.vinted.init();
     const items = await this.scrapeItems();
     console.log(`[Engine] Fetched ${items.length} items`);
 
@@ -74,20 +75,33 @@ export class FlipBotEngine {
   private async processItem(item: VintedItem): Promise<void> {
     const seen = await this.pricing.isAlreadySeen(item.id);
     if (seen) return;
+
     const vision = await this.vision.identify(item.photos);
+
     const brand = vision.brand ?? item.brand;
     const category = vision.category ?? item.category;
     const condition = vision.condition ?? item.condition;
+
     await this.pricing.saveListing(item, brand, category, condition);
+
     if (!brand || !category || !condition) return;
     const niche: Niche = { brand, category, condition };
+
     const priceMedian = await this.pricing.updateMedian(niche);
-    if (!priceMedian) return;
+    if (!priceMedian) {
+      console.log(`[Engine] Not enough data for niche "${nicheKey(niche)}" — skipping`);
+      return;
+    }
+
     const ratio = item.price / priceMedian.median;
     if (ratio > this.threshold) return;
+
     const deal: Deal = { item, vision, niche, median: priceMedian.median, discountPct: ratio };
+
     await this.telegram.sendDealAlert(deal);
-    await this.pricing.logAlert(item.id, nicheKey.niche), item.price, priceMedian.median, ratio);
+    await this.pricing.logAlert(item.id, nicheKey(niche), item.price, priceMedian.median, ratio);
+
+    console.log(`[Engine] Deal found: ${item.title} at ${item.price}EUR (median: ${priceMedian.median.toFixed(2)}EUR, -${Math.round((1 - ratio) * 100)}%)`);
   }
 
   private sleep(ms: number): Promise<void> {
